@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, Loader2Icon } from "lucide-react";
 import moment from "moment";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { deleteChatAction, editChatAction } from "./action";
@@ -132,9 +132,17 @@ export function DeleteMenuItem({ id }) {
 export function EditMenuItem({ chat }) {
   const [_, action, pending] = useActionState(editChatAction, null);
   const [open, setOpen] = useState(false);
+  const [wasSubmitting, setWasSubmitting] = useState(false);
   const [textValue, setTextValue] = useState("");
   const isButtonDisabled =
     pending || textValue === chat.message || textValue.trim() === "";
+
+  useEffect(() => {
+    if (!pending && wasSubmitting) {
+      setOpen(false);
+      setWasSubmitting(false);
+    }
+  });
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -166,22 +174,27 @@ export function EditMenuItem({ chat }) {
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey && !isButtonDisabled) {
                 e.preventDefault();
+                setWasSubmitting(true);
                 e.currentTarget.form?.requestSubmit();
-                setOpen(false);
               }
             }}
             defaultValue={chat.message}
           ></Textarea>
           <input type="hidden" name="id" defaultValue={chat._id} />
-          <DialogClose asChild>
-            <Button
-              disabled={isButtonDisabled}
-              className="h-auto w-12 rounded-full my-0.5 cursor-pointer"
-              type="submit"
-            >
+          <Button
+            disabled={isButtonDisabled}
+            className="h-auto w-12 rounded-full my-0.5 cursor-pointer"
+            type="submit"
+            onClick={() => {
+              setWasSubmitting(true);
+            }}
+          >
+            {pending ? (
+              <Loader2Icon className="animate-spin" />
+            ) : (
               <Check className="scale-175" />
-            </Button>
-          </DialogClose>
+            )}
+          </Button>
         </form>
       </DialogContent>
     </Dialog>
